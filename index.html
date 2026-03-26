@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TypeScript for QA Engineers</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --bg2: #1a1d27;
+      --bg3: #22263a;
+      --border: #2e3250;
+      --accent: #5b6af5;
+      --accent2: #7c88ff;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --text: #e2e8f0;
+      --text2: #94a3b8;
+      --text3: #64748b;
+      --code-bg: #12151f;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar */
+    #sidebar {
+      width: 280px; min-width: 280px; background: var(--bg2); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    #sidebar-header { padding: 20px 16px 12px; border-bottom: 1px solid var(--border); }
+    #sidebar-header h1 { font-size: 15px; font-weight: 700; color: var(--accent2); letter-spacing: 0.3px; }
+    #sidebar-header p { font-size: 11px; color: var(--text3); margin-top: 3px; }
+    #progress-bar-wrap { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+    #progress-label { font-size: 11px; color: var(--text3); margin-bottom: 6px; display: flex; justify-content: space-between; }
+    #progress-bar { height: 4px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+    #progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 4px; transition: width 0.4s ease; }
+    #topic-list { overflow-y: auto; flex: 1; padding: 8px 0; }
+    .topic-item {
+      padding: 8px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: var(--text2); border-left: 3px solid transparent; transition: all 0.15s;
+    }
+    .topic-item:hover { background: var(--bg3); color: var(--text); }
+    .topic-item.active { background: var(--bg3); color: var(--accent2); border-left-color: var(--accent); }
+    .topic-item.completed .topic-icon { color: var(--green); }
+    .topic-icon { font-size: 14px; width: 16px; text-align: center; }
+    .topic-badge { margin-left: auto; font-size: 10px; background: var(--bg); border-radius: 10px; padding: 1px 7px; color: var(--text3); }
+
+    /* Main */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    #topbar { padding: 14px 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: var(--bg2); }
+    #topbar h2 { font-size: 16px; font-weight: 600; }
+    #topbar .tag { font-size: 11px; background: var(--bg3); color: var(--accent2); border-radius: 20px; padding: 2px 10px; border: 1px solid var(--border); }
+    #content { flex: 1; overflow-y: auto; padding: 28px 36px; max-width: 900px; width: 100%; }
+
+    /* Lesson */
+    .lesson-section { margin-bottom: 32px; }
+    .lesson-section h3 { font-size: 15px; font-weight: 600; color: var(--accent2); margin-bottom: 10px; }
+    .lesson-section p, .lesson-section li { font-size: 14px; color: var(--text2); line-height: 1.7; }
+    .lesson-section ul { padding-left: 20px; }
+    .lesson-section li { margin-bottom: 4px; }
+    .highlight { color: var(--text); }
+
+    /* Code block */
+    .code-block {
+      background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 16px 20px; margin: 12px 0; font-family: 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 13px; line-height: 1.7; overflow-x: auto; position: relative;
+      white-space: pre;
+    }
+    .code-block .lang-tag { position: absolute; top: 8px; right: 12px; font-size: 10px; color: var(--text3); font-family: sans-serif; }
+    .kw { color: #c084fc; }
+    .ty { color: #60a5fa; }
+    .str { color: #86efac; }
+    .cm { color: #475569; font-style: italic; }
+    .fn { color: #fbbf24; }
+    .num { color: #f97316; }
+    .op { color: #94a3b8; }
+
+    /* Quiz */
+    .quiz-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+      padding: 20px 24px; margin: 20px 0;
+    }
+    .quiz-card .quiz-q { font-size: 14px; color: var(--text); font-weight: 500; margin-bottom: 14px; line-height: 1.6; }
+    .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+    .quiz-opt {
+      padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 7px; cursor: pointer; font-size: 13px; color: var(--text2);
+      transition: all 0.15s; display: flex; align-items: center; gap: 10px;
+    }
+    .quiz-opt:hover:not(.disabled) { border-color: var(--accent); color: var(--text); background: var(--bg); }
+    .quiz-opt.correct { border-color: var(--green); color: var(--green); background: rgba(34,197,94,0.08); }
+    .quiz-opt.wrong { border-color: var(--red); color: var(--red); background: rgba(239,68,68,0.08); }
+    .quiz-opt.disabled { cursor: default; }
+    .quiz-feedback { margin-top: 12px; font-size: 13px; line-height: 1.6; padding: 10px 14px; border-radius: 7px; display: none; }
+    .quiz-feedback.show { display: block; }
+    .quiz-feedback.ok { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #4ade80; }
+    .quiz-feedback.err { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #f87171; }
+    .quiz-next { margin-top: 14px; display: none; }
+    .quiz-next.show { display: block; }
+
+    /* Code challenge */
+    .challenge-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+      padding: 20px 24px; margin: 20px 0;
+    }
+    .challenge-card h4 { font-size: 13px; font-weight: 600; color: var(--yellow); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .challenge-card .desc { font-size: 13px; color: var(--text2); margin-bottom: 12px; line-height: 1.6; }
+    .challenge-editor {
+      width: 100%; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-family: 'Fira Code', monospace; font-size: 13px;
+      padding: 12px 16px; resize: vertical; min-height: 120px; line-height: 1.7;
+      outline: none;
+    }
+    .challenge-editor:focus { border-color: var(--accent); }
+    .challenge-actions { display: flex; gap: 10px; margin-top: 10px; }
+
+    /* Buttons */
+    .btn {
+      padding: 8px 18px; border-radius: 7px; font-size: 13px; font-weight: 500;
+      border: none; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent2); }
+    .btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
+
+    /* Nav */
+    #nav-footer { padding: 16px 28px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg2); }
+    #nav-footer .step-info { font-size: 12px; color: var(--text3); }
+
+    /* Callout */
+    .callout { border-radius: 8px; padding: 12px 16px; margin: 12px 0; font-size: 13px; line-height: 1.6; display: flex; gap: 10px; }
+    .callout-tip { background: rgba(91,106,245,0.1); border-left: 3px solid var(--accent); color: var(--text2); }
+    .callout-warn { background: rgba(245,158,11,0.1); border-left: 3px solid var(--yellow); color: var(--text2); }
+    .callout-qa { background: rgba(34,197,94,0.1); border-left: 3px solid var(--green); color: var(--text2); }
+    .callout-icon { font-size: 16px; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
+
+    .complete-banner {
+      background: linear-gradient(135deg, rgba(91,106,245,0.2), rgba(34,197,94,0.15));
+      border: 1px solid rgba(91,106,245,0.4); border-radius: 10px;
+      padding: 24px 28px; text-align: center; margin: 20px 0;
+    }
+    .complete-banner h3 { font-size: 18px; margin-bottom: 6px; }
+    .complete-banner p { font-size: 13px; color: var(--text2); }
+  </style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>TypeScript for QA</h1>
+    <p>Interactive learning for automation engineers</p>
+  </div>
+  <div id="progress-bar-wrap">
+    <div id="progress-label">
+      <span>Progress</span>
+      <span id="progress-pct">0%</span>
+    </div>
+    <div id="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
+  </div>
+  <div id="topic-list"></div>
+</div>
+
+<div id="main">
+  <div id="topbar">
+    <h2 id="topic-title">Welcome</h2>
+    <span class="tag" id="topic-tag">Beginner</span>
+  </div>
+  <div id="content"></div>
+  <div id="nav-footer">
+    <button class="btn btn-ghost" id="btn-prev" onclick="navigate(-1)">← Previous</button>
+    <span class="step-info" id="step-info"></span>
+    <button class="btn btn-primary" id="btn-next" onclick="navigate(1)">Next →</button>
+  </div>
+</div>
+
+<script>
+const TOPICS = [
+  {
+    id: 'intro',
+    title: 'Why TypeScript for QA?',
+    tag: 'Intro',
+    icon: '🎯',
+    content: () => `
+      <div class="lesson-section">
+        <h3>TypeScript is a QA engineer's best friend</h3>
+        <p>TypeScript is a <span class="highlight">statically typed superset of JavaScript</span> that catches bugs at compile time — before they ever reach your test suite. For QA automation, this means:</p>
+        <ul style="margin-top:10px">
+          <li>Autocomplete for Playwright, Cypress, and other test APIs</li>
+          <li>Catch typos in selector strings and test data at author time</li>
+          <li>Self-documenting page objects and test utilities</li>
+          <li>Safer refactoring — the compiler tells you what broke</li>
+        </ul>
+      </div>
+      <div class="callout callout-qa"><span class="callout-icon">✅</span><span>All major test frameworks — Playwright, Cypress, Jest, Vitest — are written in TypeScript and have first-class TS support.</span></div>
+      <div class="lesson-section">
+        <h3>TypeScript vs JavaScript: at a glance</h3>
+        <div class="code-block"><span class="lang-tag">JavaScript</span>
+<span class="cm">// JS: no safety — typos cause runtime failures</span>
+<span class="kw">const</span> user = { name: <span class="str">'Alice'</span>, role: <span class="str">'admin'</span> };
+console.log(user.nmae); <span class="cm">// undefined — silent bug!</span>
+        </div>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="cm">// TS: compile-time error — caught before running tests</span>
+<span class="kw">const</span> user: { name: <span class="ty">string</span>; role: <span class="ty">string</span> } = { name: <span class="str">'Alice'</span>, role: <span class="str">'admin'</span> };
+console.log(user.nmae); <span class="cm">// ❌ Error: Property 'nmae' does not exist</span>
+        </div>
+      </div>
+      ${quiz({
+        q: 'What is the main advantage of TypeScript over JavaScript for test automation?',
+        opts: [
+          'TypeScript tests run faster',
+          'TypeScript catches type errors at compile time, before tests run',
+          'TypeScript replaces the need for a test framework',
+          'TypeScript is required by Playwright'
+        ],
+        correct: 1,
+        feedback: 'TypeScript\'s static type system catches bugs at compile time, meaning you see errors in your editor before even running your tests. This saves debugging time and makes your test code more reliable.'
+      })}
+    `
+  },
+  {
+    id: 'types',
+    title: 'Basic Types',
+    tag: 'Basics',
+    icon: '🔤',
+    content: () => `
+      <div class="lesson-section">
+        <h3>Primitive types</h3>
+        <p>The three most common types in test code:</p>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="kw">const</span> testName: <span class="ty">string</span> = <span class="str">'Login flow test'</span>;
+<span class="kw">const</span> retryCount: <span class="ty">number</span> = <span class="num">3</span>;
+<span class="kw">const</span> headless: <span class="ty">boolean</span> = <span class="kw">true</span>;
+
+<span class="cm">// Arrays</span>
+<span class="kw">const</span> browsers: <span class="ty">string</span>[] = [<span class="str">'chromium'</span>, <span class="str">'firefox'</span>, <span class="str">'webkit'</span>];
+<span class="kw">const</span> timeouts: <span class="ty">number</span>[] = [<span class="num">5000</span>, <span class="num">10000</span>, <span class="num">30000</span>];
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>Union types — common in test data</h3>
+        <p>A value that can be <span class="highlight">one of several types</span>. Very useful for test configuration:</p>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="cm">// Can be a string URL or null (not yet set)</span>
+<span class="kw">let</span> baseUrl: <span class="ty">string</span> <span class="op">|</span> <span class="ty">null</span> = <span class="kw">null</span>;
+baseUrl = <span class="str">'https://example.com'</span>; <span class="cm">// ✅ valid</span>
+
+<span class="cm">// Status can only be one of these exact strings</span>
+<span class="kw">type</span> <span class="ty">TestStatus</span> = <span class="str">'passed'</span> <span class="op">|</span> <span class="str">'failed'</span> <span class="op">|</span> <span class="str">'skipped'</span>;
+<span class="kw">const</span> result: <span class="ty">TestStatus</span> = <span class="str">'passed'</span>;
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>Literal types for test environments</h3>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="kw">type</span> <span class="ty">Environment</span> = <span class="str">'dev'</span> <span class="op">|</span> <span class="str">'staging'</span> <span class="op">|</span> <span class="str">'production'</span>;
+
+<span class="kw">function</span> <span class="fn">getBaseUrl</span>(env: <span class="ty">Environment</span>): <span class="ty">string</span> {
+  <span class="kw">const</span> urls = {
+    dev: <span class="str">'http://localhost:3000'</span>,
+    staging: <span class="str">'https://staging.myapp.com'</span>,
+    production: <span class="str">'https://myapp.com'</span>
+  };
+  <span class="kw">return</span> urls[env];
+}
+
+<span class="fn">getBaseUrl</span>(<span class="str">'staging'</span>);  <span class="cm">// ✅</span>
+<span class="fn">getBaseUrl</span>(<span class="str">'local'</span>);    <span class="cm">// ❌ Error: "local" is not assignable to Environment</span>
+        </div>
+      </div>
+      <div class="callout callout-tip"><span class="callout-icon">💡</span><span>Use literal union types for anything that has a fixed set of valid values: environments, browsers, test statuses, HTTP methods.</span></div>
+      ${quiz({
+        q: 'Which TypeScript type annotation correctly declares an array of browser names?',
+        opts: [
+          '<code>const browsers: Array = ["chromium", "firefox"]</code>',
+          '<code>const browsers: string[] = ["chromium", "firefox"]</code>',
+          '<code>const browsers: [string] = ["chromium", "firefox"]</code>',
+          '<code>const browsers: strings = ["chromium", "firefox"]</code>'
+        ],
+        correct: 1,
+        feedback: 'string[] is the correct syntax for an array of strings. Array&lt;string&gt; is also valid. [string] is a tuple type with exactly one string element.'
+      })}
+    `
+  },
+  {
+    id: 'interfaces',
+    title: 'Interfaces & Types',
+    tag: 'Basics',
+    icon: '📐',
+    content: () => `
+      <div class="lesson-section">
+        <h3>Interfaces — modeling test data shapes</h3>
+        <p>Interfaces define the <span class="highlight">shape of an object</span>. Essential for test data, fixtures, and API responses:</p>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="kw">interface</span> <span class="ty">User</span> {
+  id: <span class="ty">number</span>;
+  email: <span class="ty">string</span>;
+  role: <span class="str">'admin'</span> <span class="op">|</span> <span class="str">'user'</span> <span class="op">|</span> <span class="str">'guest'</span>;
+  displayName?: <span class="ty">string</span>; <span class="cm">// optional field (?) </span>
+}
+
+<span class="cm">// Test data that matches the interface</span>
+<span class="kw">const</span> testUser: <span class="ty">User</span> = {
+  id: <span class="num">1</span>,
+  email: <span class="str">'qa@example.com'</span>,
+  role: <span class="str">'admin'</span>
+};
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>Interfaces for API response typing</h3>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="kw">interface</span> <span class="ty">ApiResponse</span>&lt;<span class="ty">T</span>&gt; {
+  data: <span class="ty">T</span>;
+  status: <span class="ty">number</span>;
+  message: <span class="ty">string</span>;
+}
+
+<span class="kw">interface</span> <span class="ty">Product</span> {
+  id: <span class="ty">string</span>;
+  name: <span class="ty">string</span>;
+  price: <span class="ty">number</span>;
+}
+
+<span class="cm">// Typed API response</span>
+<span class="kw">async function</span> <span class="fn">fetchProduct</span>(id: <span class="ty">string</span>): <span class="ty">Promise</span>&lt;<span class="ty">ApiResponse</span>&lt;<span class="ty">Product</span>&gt;&gt; {
+  <span class="kw">const</span> res = <span class="kw">await</span> fetch(<span class="str">\`/api/products/\${id}\`</span>);
+  <span class="kw">return</span> res.json();
+}
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>type alias vs interface</h3>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="cm">// interface: best for objects, supports merging & extending</span>
+<span class="kw">interface</span> <span class="ty">TestConfig</span> {
+  timeout: <span class="ty">number</span>;
+  retries: <span class="ty">number</span>;
+}
+
+<span class="cm">// type alias: great for unions, intersections, primitives</span>
+<span class="kw">type</span> <span class="ty">BrowserName</span> = <span class="str">'chromium'</span> <span class="op">|</span> <span class="str">'firefox'</span> <span class="op">|</span> <span class="str">'webkit'</span>;
+<span class="kw">type</span> <span class="ty">TestResult</span> = <span class="ty">TestConfig</span> <span class="op">&</span> { browser: <span class="ty">BrowserName</span> }; <span class="cm">// intersection</span>
+        </div>
+      </div>
+      <div class="callout callout-qa"><span class="callout-icon">✅</span><span>QA tip: Create interfaces for every API response and test fixture. When the API changes, TypeScript will immediately show you every place in your tests that needs updating.</span></div>
+      ${quiz({
+        q: 'What does the ? symbol mean when used in an interface property like `name?: string`?',
+        opts: [
+          'The property is required and must be a string',
+          'The property is optional — it may or may not be present',
+          'The property can be any type',
+          'The property is read-only'
+        ],
+        correct: 1,
+        feedback: 'The ? makes a property optional. An object satisfying this interface can include or omit that property. This is useful for test data where some fields are not always needed.'
+      })}
+    `
+  },
+  {
+    id: 'functions',
+    title: 'Functions & Return Types',
+    tag: 'Basics',
+    icon: '⚙️',
+    content: () => `
+      <div class="lesson-section">
+        <h3>Typed function signatures</h3>
+        <p>Always annotate <span class="highlight">parameters and return types</span> in test helpers — it makes them self-documenting:</p>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="cm">// Parameters and return type explicitly typed</span>
+<span class="kw">function</span> <span class="fn">buildLoginUrl</span>(baseUrl: <span class="ty">string</span>, redirectTo?: <span class="ty">string</span>): <span class="ty">string</span> {
+  <span class="kw">const</span> url = <span class="kw">new</span> <span class="ty">URL</span>(<span class="str">'/login'</span>, baseUrl);
+  <span class="kw">if</span> (redirectTo) url.searchParams.set(<span class="str">'redirect'</span>, redirectTo);
+  <span class="kw">return</span> url.toString();
+}
+
+<span class="cm">// Arrow function form — common in test utilities</span>
+<span class="kw">const</span> <span class="fn">formatDate</span> = (date: <span class="ty">Date</span>): <span class="ty">string</span> => date.toISOString().split(<span class="str">'T'</span>)[<span class="num">0</span>];
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>void and never return types</h3>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="cm">// void: function performs an action, returns nothing</span>
+<span class="kw">async function</span> <span class="fn">clearTestData</span>(userId: <span class="ty">string</span>): <span class="ty">Promise</span>&lt;<span class="ty">void</span>&gt; {
+  <span class="kw">await</span> db.users.delete(userId);
+  <span class="kw">await</span> db.sessions.deleteAll(userId);
+}
+
+<span class="cm">// never: function never returns (throws or loops forever)</span>
+<span class="kw">function</span> <span class="fn">fail</span>(message: <span class="ty">string</span>): <span class="ty">never</span> {
+  <span class="kw">throw new</span> <span class="ty">Error</span>(<span class="str">\`Test failure: \${message}\`</span>);
+}
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>Function types as parameters (callbacks)</h3>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="cm">// Type for a retry-able operation</span>
+<span class="kw">type</span> <span class="ty">AsyncOperation</span>&lt;<span class="ty">T</span>&gt; = () => <span class="ty">Promise</span>&lt;<span class="ty">T</span>&gt;;
+
+<span class="kw">async function</span> <span class="fn">withRetry</span>&lt;<span class="ty">T</span>&gt;(
+  operation: <span class="ty">AsyncOperation</span>&lt;<span class="ty">T</span>&gt;,
+  retries: <span class="ty">number</span> = <span class="num">3</span>
+): <span class="ty">Promise</span>&lt;<span class="ty">T</span>&gt; {
+  <span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">0</span>; i < retries; i++) {
+    <span class="kw">try</span> { <span class="kw">return await</span> <span class="fn">operation</span>(); }
+    <span class="kw">catch</span> (e) { <span class="kw">if</span> (i === retries - <span class="num">1</span>) <span class="kw">throw</span> e; }
+  }
+  <span class="fn">fail</span>(<span class="str">'unreachable'</span>);
+}
+
+<span class="cm">// Usage in tests</span>
+<span class="kw">const</span> user = <span class="kw">await</span> <span class="fn">withRetry</span>(() => api.<span class="fn">getUser</span>(<span class="str">'123'</span>));
+        </div>
+      </div>
+      ${quiz({
+        q: 'What return type should a function have if it performs actions (like clicking and waiting) but returns no value?',
+        opts: [
+          'undefined',
+          'void',
+          'null',
+          'never'
+        ],
+        correct: 1,
+        feedback: 'void is the correct return type for functions that perform side effects but do not return a meaningful value. In async test helpers, you\'ll often see Promise<void>.'
+      })}
+    `
+  },
+  {
+    id: 'classes',
+    title: 'Classes & Page Objects',
+    tag: 'Intermediate',
+    icon: '🏗️',
+    content: () => `
+      <div class="lesson-section">
+        <h3>The Page Object Model in TypeScript</h3>
+        <p>TypeScript classes are the perfect fit for the <span class="highlight">Page Object Model (POM)</span> pattern. Access modifiers and types make your page objects robust and self-documenting:</p>
+        <div class="code-block"><span class="lang-tag">TypeScript (Playwright)</span>
+<span class="kw">import</span> { <span class="ty">Page</span>, <span class="ty">Locator</span> } <span class="kw">from</span> <span class="str">'@playwright/test'</span>;
+
+<span class="kw">export class</span> <span class="ty">LoginPage</span> {
+  <span class="cm">// private: only accessible within this class</span>
+  <span class="kw">private readonly</span> page: <span class="ty">Page</span>;
+  <span class="kw">private readonly</span> emailInput: <span class="ty">Locator</span>;
+  <span class="kw">private readonly</span> passwordInput: <span class="ty">Locator</span>;
+  <span class="kw">private readonly</span> submitBtn: <span class="ty">Locator</span>;
+
+  <span class="kw">constructor</span>(page: <span class="ty">Page</span>) {
+    <span class="kw">this</span>.page = page;
+    <span class="kw">this</span>.emailInput = page.<span class="fn">getByLabel</span>(<span class="str">'Email'</span>);
+    <span class="kw">this</span>.passwordInput = page.<span class="fn">getByLabel</span>(<span class="str">'Password'</span>);
+    <span class="kw">this</span>.submitBtn = page.<span class="fn">getByRole</span>(<span class="str">'button'</span>, { name: <span class="str">'Sign in'</span> });
+  }
+
+  <span class="kw">async</span> <span class="fn">goto</span>(): <span class="ty">Promise</span>&lt;<span class="ty">void</span>&gt; {
+    <span class="kw">await</span> <span class="kw">this</span>.page.<span class="fn">goto</span>(<span class="str">'/login'</span>);
+  }
+
+  <span class="kw">async</span> <span class="fn">login</span>(email: <span class="ty">string</span>, password: <span class="ty">string</span>): <span class="ty">Promise</span>&lt;<span class="ty">void</span>&gt; {
+    <span class="kw">await</span> <span class="kw">this</span>.emailInput.<span class="fn">fill</span>(email);
+    <span class="kw">await</span> <span class="kw">this</span>.passwordInput.<span class="fn">fill</span>(password);
+    <span class="kw">await</span> <span class="kw">this</span>.submitBtn.<span class="fn">click</span>();
+  }
+
+  <span class="kw">async</span> <span class="fn">getErrorMessage</span>(): <span class="ty">Promise</span>&lt;<span class="ty">string</span> <span class="op">|</span> <span class="ty">null</span>&gt; {
+    <span class="kw">const</span> el = <span class="kw">this</span>.page.<span class="fn">getByRole</span>(<span class="str">'alert'</span>);
+    <span class="kw">return</span> (<span class="kw">await</span> el.<span class="fn">isVisible</span>()) ? el.<span class="fn">textContent</span>() : <span class="kw">null</span>;
+  }
+}
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>Using your Page Object in a test</h3>
+        <div class="code-block"><span class="lang-tag">TypeScript (Playwright)</span>
+<span class="kw">import</span> { test, expect } <span class="kw">from</span> <span class="str">'@playwright/test'</span>;
+<span class="kw">import</span> { <span class="ty">LoginPage</span> } <span class="kw">from</span> <span class="str">'./pages/LoginPage'</span>;
+
+test(<span class="str">'shows error for invalid credentials'</span>, <span class="kw">async</span> ({ page }) => {
+  <span class="kw">const</span> loginPage = <span class="kw">new</span> <span class="ty">LoginPage</span>(page);
+  <span class="kw">await</span> loginPage.<span class="fn">goto</span>();
+  <span class="kw">await</span> loginPage.<span class="fn">login</span>(<span class="str">'bad@email.com'</span>, <span class="str">'wrongpassword'</span>);
+
+  <span class="kw">const</span> error = <span class="kw">await</span> loginPage.<span class="fn">getErrorMessage</span>();
+  <span class="fn">expect</span>(error).<span class="fn">toContain</span>(<span class="str">'Invalid credentials'</span>);
+});
+        </div>
+      </div>
+      <div class="callout callout-tip"><span class="callout-icon">💡</span><span>Use <code>readonly</code> for locators defined in the constructor — they should never be reassigned. TypeScript will enforce this.</span></div>
+      ${quiz({
+        q: 'In a Page Object class, why should locators be marked as `private`?',
+        opts: [
+          'private makes the code run faster',
+          'private prevents tests from directly manipulating locators, keeping interactions through the page object\'s methods',
+          'Playwright requires locators to be private',
+          'private locators are automatically retried on failure'
+        ],
+        correct: 1,
+        feedback: 'Marking locators as private enforces encapsulation — tests interact through named methods (like login() or getErrorMessage()) rather than directly with raw locators. This makes tests more readable and easier to maintain when selectors change.'
+      })}
+    `
+  },
+  {
+    id: 'generics',
+    title: 'Generics',
+    tag: 'Intermediate',
+    icon: '🧩',
+    content: () => `
+      <div class="lesson-section">
+        <h3>What are generics?</h3>
+        <p>Generics let you write <span class="highlight">reusable code that works with any type</span> while still being type-safe. Think of them as type parameters:</p>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="cm">// Without generics: only works with strings</span>
+<span class="kw">function</span> <span class="fn">firstItem</span>(arr: <span class="ty">string</span>[]): <span class="ty">string</span> {
+  <span class="kw">return</span> arr[<span class="num">0</span>];
+}
+
+<span class="cm">// With generics: works with any type, type-safely</span>
+<span class="kw">function</span> <span class="fn">firstItem</span>&lt;<span class="ty">T</span>&gt;(arr: <span class="ty">T</span>[]): <span class="ty">T</span> {
+  <span class="kw">return</span> arr[<span class="num">0</span>];
+}
+
+<span class="kw">const</span> browser = <span class="fn">firstItem</span>([<span class="str">'chromium'</span>, <span class="str">'firefox'</span>]); <span class="cm">// type: string</span>
+<span class="kw">const</span> timeout = <span class="fn">firstItem</span>([<span class="num">5000</span>, <span class="num">10000</span>]);           <span class="cm">// type: number</span>
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>Generics in test utilities</h3>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="cm">// Generic test data factory</span>
+<span class="kw">function</span> <span class="fn">createTestData</span>&lt;<span class="ty">T</span>&gt;(defaults: <span class="ty">T</span>, overrides?: <span class="ty">Partial</span>&lt;<span class="ty">T</span>&gt;): <span class="ty">T</span> {
+  <span class="kw">return</span> { ...defaults, ...overrides };
+}
+
+<span class="kw">interface</span> <span class="ty">User</span> { name: <span class="ty">string</span>; role: <span class="ty">string</span>; active: <span class="ty">boolean</span>; }
+
+<span class="kw">const</span> defaultUser: <span class="ty">User</span> = { name: <span class="str">'Test User'</span>, role: <span class="str">'viewer'</span>, active: <span class="kw">true</span> };
+
+<span class="cm">// Use defaults but override role for this specific test</span>
+<span class="kw">const</span> adminUser = <span class="fn">createTestData</span>(defaultUser, { role: <span class="str">'admin'</span> });
+<span class="cm">// adminUser.role === 'admin', rest from defaults</span>
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>Partial, Required, Pick, Omit — built-in utility types</h3>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="kw">interface</span> <span class="ty">TestCase</span> {
+  id: <span class="ty">string</span>;
+  title: <span class="ty">string</span>;
+  tags: <span class="ty">string</span>[];
+  priority: <span class="str">'low'</span> <span class="op">|</span> <span class="str">'medium'</span> <span class="op">|</span> <span class="str">'high'</span>;
+  assignee: <span class="ty">string</span>;
+}
+
+<span class="cm">// Partial: all fields optional (for updates/patches)</span>
+<span class="kw">type</span> <span class="ty">TestCaseUpdate</span> = <span class="ty">Partial</span>&lt;<span class="ty">TestCase</span>&gt;;
+
+<span class="cm">// Pick: only some fields</span>
+<span class="kw">type</span> <span class="ty">TestCaseSummary</span> = <span class="ty">Pick</span>&lt;<span class="ty">TestCase</span>, <span class="str">'id'</span> <span class="op">|</span> <span class="str">'title'</span> <span class="op">|</span> <span class="str">'priority'</span>&gt;;
+
+<span class="cm">// Omit: all fields except some</span>
+<span class="kw">type</span> <span class="ty">NewTestCase</span> = <span class="ty">Omit</span>&lt;<span class="ty">TestCase</span>, <span class="str">'id'</span>&gt;; <span class="cm">// id is auto-generated</span>
+        </div>
+      </div>
+      <div class="callout callout-qa"><span class="callout-icon">✅</span><span>Partial&lt;T&gt; is extremely useful for test data builders — let tests only specify the fields relevant to what they're testing, with sensible defaults for the rest.</span></div>
+      ${quiz({
+        q: 'What does `Partial<User>` produce if User is `{ name: string; email: string }`?',
+        opts: [
+          '{ name: string; email: string } — no change',
+          '{ name?: string; email?: string } — all fields become optional',
+          '{ name: string | undefined; email: string | undefined }',
+          'An error — Partial only works with arrays'
+        ],
+        correct: 1,
+        feedback: 'Partial<T> creates a new type where every property of T becomes optional (marked with ?). This is very handy for test fixtures and update operations where you only need to specify changed fields.'
+      })}
+    `
+  },
+  {
+    id: 'async',
+    title: 'Async / Await',
+    tag: 'Intermediate',
+    icon: '⏱️',
+    content: () => `
+      <div class="lesson-section">
+        <h3>Async/await in test code</h3>
+        <p>Every Playwright action is asynchronous. TypeScript helps you use async/await correctly:</p>
+        <div class="code-block"><span class="lang-tag">TypeScript (Playwright)</span>
+<span class="cm">// Return type: Promise&lt;void&gt; — async with no return value</span>
+test(<span class="str">'user can add to cart'</span>, <span class="kw">async</span> ({ page }) => {
+  <span class="kw">await</span> page.<span class="fn">goto</span>(<span class="str">'/products'</span>);
+  <span class="kw">await</span> page.<span class="fn">getByText</span>(<span class="str">'Laptop'</span>).<span class="fn">click</span>();
+  <span class="kw">await</span> page.<span class="fn">getByRole</span>(<span class="str">'button'</span>, { name: <span class="str">'Add to cart'</span> }).<span class="fn">click</span>();
+
+  <span class="cm">// Await the value when you need it</span>
+  <span class="kw">const</span> cartCount = <span class="kw">await</span> page.<span class="fn">getByTestId</span>(<span class="str">'cart-count'</span>).<span class="fn">textContent</span>();
+  <span class="fn">expect</span>(cartCount).<span class="fn">toBe</span>(<span class="str">'1'</span>);
+});
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>Promise.all — run async operations in parallel</h3>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="cm">// ❌ Sequential: slow — waits for each before starting next</span>
+<span class="kw">const</span> user1 = <span class="kw">await</span> api.<span class="fn">getUser</span>(<span class="str">'1'</span>);
+<span class="kw">const</span> user2 = <span class="kw">await</span> api.<span class="fn">getUser</span>(<span class="str">'2'</span>);
+<span class="kw">const</span> user3 = <span class="kw">await</span> api.<span class="fn">getUser</span>(<span class="str">'3'</span>);
+
+<span class="cm">// ✅ Parallel: fast — all requests fire at once</span>
+<span class="kw">const</span> [user1, user2, user3] = <span class="kw">await</span> <span class="ty">Promise</span>.<span class="fn">all</span>([
+  api.<span class="fn">getUser</span>(<span class="str">'1'</span>),
+  api.<span class="fn">getUser</span>(<span class="str">'2'</span>),
+  api.<span class="fn">getUser</span>(<span class="str">'3'</span>)
+]);
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>Error handling in async test helpers</h3>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="kw">async function</span> <span class="fn">safeClick</span>(
+  locator: <span class="ty">Locator</span>,
+  options?: { timeout?: <span class="ty">number</span> }
+): <span class="ty">Promise</span>&lt;<span class="str">'clicked'</span> <span class="op">|</span> <span class="str">'not-found'</span>&gt; {
+  <span class="kw">try</span> {
+    <span class="kw">await</span> locator.<span class="fn">click</span>({ timeout: options?.timeout ?? <span class="num">3000</span> });
+    <span class="kw">return</span> <span class="str">'clicked'</span>;
+  } <span class="kw">catch</span> {
+    <span class="kw">return</span> <span class="str">'not-found'</span>;
+  }
+}
+        </div>
+      </div>
+      <div class="callout callout-warn"><span class="callout-icon">⚠️</span><span>Forgetting <code>await</code> is a common Playwright bug. TypeScript won't always catch it, but enabling <code>@typescript-eslint/no-floating-promises</code> will flag unawaited promises.</span></div>
+      ${quiz({
+        q: 'What is the return type of an async function that returns a string?',
+        opts: [
+          'string',
+          'async string',
+          'Promise<string>',
+          'Future<string>'
+        ],
+        correct: 2,
+        feedback: 'Any async function implicitly returns a Promise. If the function body returns a string, the function\'s return type is Promise<string>. TypeScript will enforce this.'
+      })}
+    `
+  },
+  {
+    id: 'enums',
+    title: 'Enums & Constants',
+    tag: 'Intermediate',
+    icon: '📋',
+    content: () => `
+      <div class="lesson-section">
+        <h3>Enums for test constants</h3>
+        <p>Enums group related named constants — great for test roles, statuses, and selectors:</p>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="cm">// String enum — values are readable in test reports</span>
+<span class="kw">enum</span> <span class="ty">UserRole</span> {
+  Admin = <span class="str">'admin'</span>,
+  Editor = <span class="str">'editor'</span>,
+  Viewer = <span class="str">'viewer'</span>,
+  Guest = <span class="str">'guest'</span>
+}
+
+<span class="kw">enum</span> <span class="ty">TestPriority</span> {
+  Critical = <span class="str">'P0'</span>,
+  High = <span class="str">'P1'</span>,
+  Medium = <span class="str">'P2'</span>,
+  Low = <span class="str">'P3'</span>
+}
+
+<span class="cm">// Usage</span>
+<span class="kw">function</span> <span class="fn">createUser</span>(role: <span class="ty">UserRole</span>) { <span class="cm">/* ... */</span> }
+<span class="fn">createUser</span>(<span class="ty">UserRole</span>.Admin); <span class="cm">// ✅</span>
+<span class="fn">createUser</span>(<span class="str">'superuser'</span>);  <span class="cm">// ❌ not a valid UserRole</span>
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>const assertions — a modern alternative</h3>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="cm">// const assertion: creates a readonly object of literal types</span>
+<span class="kw">const</span> ROLES = {
+  ADMIN: <span class="str">'admin'</span>,
+  EDITOR: <span class="str">'editor'</span>,
+  VIEWER: <span class="str">'viewer'</span>
+} <span class="kw">as const</span>;
+
+<span class="cm">// Extract the type from the object values</span>
+<span class="kw">type</span> <span class="ty">Role</span> = <span class="kw">typeof</span> ROLES[<span class="kw">keyof typeof</span> ROLES];
+<span class="cm">// Role = 'admin' | 'editor' | 'viewer'</span>
+
+<span class="kw">const</span> SELECTORS = {
+  loginButton: <span class="str">'[data-testid="login-btn"]'</span>,
+  emailInput: <span class="str">'[data-testid="email"]'</span>,
+  errorBanner: <span class="str">'[data-testid="error"]'</span>
+} <span class="kw">as const</span>;
+        </div>
+      </div>
+      <div class="callout callout-tip"><span class="callout-icon">💡</span><span>Store test selectors in a <code>const</code> object with <code>as const</code>. This gives you autocomplete for selector names and a single place to update if the app changes.</span></div>
+      ${quiz({
+        q: 'Why use string enums (enum Role { Admin = "admin" }) instead of plain strings in test code?',
+        opts: [
+          'String enums make tests run faster',
+          'String enums give you autocomplete, prevent typos, and produce readable values in test reports',
+          'Playwright requires enums for role-based testing',
+          'String enums reduce file size'
+        ],
+        correct: 1,
+        feedback: 'String enums provide three key benefits: (1) IDE autocomplete so you never mistype a value, (2) compile-time error if you use an invalid value, and (3) the string value shows up readably in error messages and reports.'
+      })}
+    `
+  },
+  {
+    id: 'fixtures',
+    title: 'Playwright Fixtures',
+    tag: 'Advanced',
+    icon: '🔧',
+    content: () => `
+      <div class="lesson-section">
+        <h3>Strongly-typed Playwright fixtures</h3>
+        <p>Fixtures are Playwright's dependency injection system. TypeScript makes them <span class="highlight">type-safe and discoverable</span>:</p>
+        <div class="code-block"><span class="lang-tag">TypeScript (Playwright)</span>
+<span class="kw">import</span> { test <span class="kw">as</span> base, expect } <span class="kw">from</span> <span class="str">'@playwright/test'</span>;
+<span class="kw">import</span> { <span class="ty">LoginPage</span> } <span class="kw">from</span> <span class="str">'./pages/LoginPage'</span>;
+<span class="kw">import</span> { <span class="ty">DashboardPage</span> } <span class="kw">from</span> <span class="str">'./pages/DashboardPage'</span>;
+
+<span class="cm">// Define the shape of your fixtures</span>
+<span class="kw">type</span> <span class="ty">MyFixtures</span> = {
+  loginPage: <span class="ty">LoginPage</span>;
+  dashboardPage: <span class="ty">DashboardPage</span>;
+  authenticatedPage: <span class="ty">Page</span>; <span class="cm">// page already logged in</span>
+};
+
+<span class="kw">export const</span> test = base.<span class="fn">extend</span>&lt;<span class="ty">MyFixtures</span>&gt;({
+  loginPage: <span class="kw">async</span> ({ page }, use) => {
+    <span class="kw">await</span> <span class="fn">use</span>(<span class="kw">new</span> <span class="ty">LoginPage</span>(page));
+  },
+
+  dashboardPage: <span class="kw">async</span> ({ page }, use) => {
+    <span class="kw">await</span> <span class="fn">use</span>(<span class="kw">new</span> <span class="ty">DashboardPage</span>(page));
+  },
+
+  authenticatedPage: <span class="kw">async</span> ({ page }, use) => {
+    <span class="kw">const</span> loginPage = <span class="kw">new</span> <span class="ty">LoginPage</span>(page);
+    <span class="kw">await</span> loginPage.<span class="fn">goto</span>();
+    <span class="kw">await</span> loginPage.<span class="fn">login</span>(<span class="str">'test@example.com'</span>, <span class="str">'password123'</span>);
+    <span class="kw">await</span> <span class="fn">use</span>(page); <span class="cm">// provide page after login</span>
+    <span class="cm">// cleanup happens here after test</span>
+  }
+});
+
+<span class="kw">export</span> { expect };
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>Using typed fixtures in tests</h3>
+        <div class="code-block"><span class="lang-tag">TypeScript (Playwright)</span>
+<span class="cm">// Import your extended test, not the base one</span>
+<span class="kw">import</span> { test, expect } <span class="kw">from</span> <span class="str">'./fixtures'</span>;
+
+<span class="cm">// TypeScript knows the type of loginPage — full autocomplete!</span>
+test(<span class="str">'login with valid credentials'</span>, <span class="kw">async</span> ({ loginPage, dashboardPage }) => {
+  <span class="kw">await</span> loginPage.<span class="fn">goto</span>();
+  <span class="kw">await</span> loginPage.<span class="fn">login</span>(<span class="str">'user@example.com'</span>, <span class="str">'correct-password'</span>);
+  <span class="kw">await</span> <span class="fn">expect</span>(dashboardPage.heading).<span class="fn">toBeVisible</span>();
+});
+
+test(<span class="str">'dashboard shows user name'</span>, <span class="kw">async</span> ({ authenticatedPage }) => {
+  <span class="kw">await</span> <span class="fn">expect</span>(authenticatedPage.<span class="fn">getByTestId</span>(<span class="str">'user-name'</span>)).<span class="fn">toBeVisible</span>();
+});
+        </div>
+      </div>
+      <div class="callout callout-qa"><span class="callout-icon">✅</span><span>Typed fixtures are one of the biggest QA productivity wins in TypeScript + Playwright. You get full autocomplete for your page objects and test helpers, and mismatched types are caught at compile time.</span></div>
+      ${quiz({
+        q: 'What is the purpose of `test.extend<MyFixtures>({...})` in Playwright?',
+        opts: [
+          'It extends the browser\'s capabilities',
+          'It creates a new test function with additional typed dependencies (fixtures) automatically injected into tests',
+          'It adds more assertion methods to expect()',
+          'It enables parallel test execution'
+        ],
+        correct: 1,
+        feedback: 'test.extend() creates a custom test function that automatically sets up and tears down the fixtures you define. The generic type parameter makes fixtures type-safe — TypeScript knows what each fixture is and can provide autocomplete.'
+      })}
+    `
+  },
+  {
+    id: 'narrowing',
+    title: 'Type Narrowing',
+    tag: 'Advanced',
+    icon: '🔍',
+    content: () => `
+      <div class="lesson-section">
+        <h3>Narrowing — handling uncertain types safely</h3>
+        <p>When a value could be multiple types, TypeScript's <span class="highlight">type narrowing</span> lets you safely handle each case:</p>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="cm">// textContent() returns string | null</span>
+<span class="kw">const</span> text = <span class="kw">await</span> page.<span class="fn">getByTestId</span>(<span class="str">'price'</span>).<span class="fn">textContent</span>();
+
+<span class="cm">// Without narrowing — TypeScript error!</span>
+<span class="kw">const</span> price = parseFloat(text); <span class="cm">// ❌ text might be null</span>
+
+<span class="cm">// With narrowing — safe</span>
+<span class="kw">if</span> (text === <span class="kw">null</span>) <span class="kw">throw new</span> <span class="ty">Error</span>(<span class="str">'Price element not found'</span>);
+<span class="kw">const</span> price = parseFloat(text); <span class="cm">// ✅ text is now string</span>
+
+<span class="cm">// Or with nullish coalescing</span>
+<span class="kw">const</span> displayText = text ?? <span class="str">'N/A'</span>; <span class="cm">// fallback if null</span>
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>Type guards — custom narrowing functions</h3>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="kw">interface</span> <span class="ty">SuccessResponse</span> { status: <span class="str">'success'</span>; data: <span class="ty">unknown</span>; }
+<span class="kw">interface</span> <span class="ty">ErrorResponse</span>  { status: <span class="str">'error'</span>;   message: <span class="ty">string</span>; }
+<span class="kw">type</span> <span class="ty">ApiResponse</span> = <span class="ty">SuccessResponse</span> <span class="op">|</span> <span class="ty">ErrorResponse</span>;
+
+<span class="cm">// Type guard function: return type "x is ErrorResponse" is the key</span>
+<span class="kw">function</span> <span class="fn">isError</span>(res: <span class="ty">ApiResponse</span>): res <span class="kw">is</span> <span class="ty">ErrorResponse</span> {
+  <span class="kw">return</span> res.status === <span class="str">'error'</span>;
+}
+
+<span class="kw">async function</span> <span class="fn">callApi</span>(): <span class="ty">Promise</span>&lt;<span class="ty">void</span>&gt; {
+  <span class="kw">const</span> res: <span class="ty">ApiResponse</span> = <span class="kw">await</span> <span class="fn">fetchData</span>();
+  <span class="kw">if</span> (<span class="fn">isError</span>(res)) {
+    <span class="cm">// TypeScript knows res is ErrorResponse here</span>
+    console.error(res.message);
+  } <span class="kw">else</span> {
+    <span class="cm">// TypeScript knows res is SuccessResponse here</span>
+    console.log(res.data);
+  }
+}
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>Optional chaining and nullish coalescing</h3>
+        <div class="code-block"><span class="lang-tag">TypeScript</span>
+<span class="kw">interface</span> <span class="ty">TestResult</span> {
+  error?: { message: <span class="ty">string</span>; stack?: <span class="ty">string</span> };
+}
+
+<span class="kw">const</span> result: <span class="ty">TestResult</span> = getTestResult();
+
+<span class="cm">// ?. — safe property access on potentially undefined values</span>
+<span class="kw">const</span> errorMsg = result.error?.message;       <span class="cm">// string | undefined</span>
+<span class="kw">const</span> stackTrace = result.error?.stack;       <span class="cm">// string | undefined</span>
+
+<span class="cm">// ?? — fallback when value is null or undefined</span>
+<span class="kw">const</span> displayMsg = result.error?.message ?? <span class="str">'No error'</span>;
+        </div>
+      </div>
+      ${quiz({
+        q: 'What does the `?.` operator do in `element?.textContent`?',
+        opts: [
+          'Makes the property access async',
+          'Safely accesses the property — returns undefined instead of throwing if element is null/undefined',
+          'Converts the result to an optional type',
+          'It\'s shorthand for a ternary operator'
+        ],
+        correct: 1,
+        feedback: 'The optional chaining operator (?.) short-circuits and returns undefined if the value to the left is null or undefined, instead of throwing a TypeError. This is essential when working with DOM elements that may not be present.'
+      })}
+    `
+  },
+  {
+    id: 'tsconfig',
+    title: 'tsconfig & Project Setup',
+    tag: 'Advanced',
+    icon: '⚙️',
+    content: () => `
+      <div class="lesson-section">
+        <h3>tsconfig.json for a Playwright project</h3>
+        <p>A well-configured <code>tsconfig.json</code> enables strict type checking and makes your test suite more reliable:</p>
+        <div class="code-block"><span class="lang-tag">JSON (tsconfig.json)</span>
+{
+  <span class="str">"compilerOptions"</span>: {
+    <span class="str">"target"</span>: <span class="str">"ES2022"</span>,          <span class="cm">// modern JS features</span>
+    <span class="str">"module"</span>: <span class="str">"commonjs"</span>,        <span class="cm">// Node.js module system</span>
+    <span class="str">"lib"</span>: [<span class="str">"ES2022"</span>, <span class="str">"DOM"</span>],    <span class="cm">// DOM types for browser APIs</span>
+    <span class="str">"strict"</span>: <span class="kw">true</span>,               <span class="cm">// enables all strict checks</span>
+    <span class="str">"noUncheckedIndexedAccess"</span>: <span class="kw">true</span>, <span class="cm">// arr[0] is T | undefined</span>
+    <span class="str">"baseUrl"</span>: <span class="str">"."</span>,
+    <span class="str">"paths"</span>: {
+      <span class="str">"@pages/*"</span>: [<span class="str">"./pages/*"</span>],
+      <span class="str">"@fixtures"</span>: [<span class="str">"./fixtures"</span>]
+    }
+  },
+  <span class="str">"include"</span>: [<span class="str">"**/*.ts"</span>],
+  <span class="str">"exclude"</span>: [<span class="str">"node_modules"</span>]
+}
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>Key strict settings explained</h3>
+        <div class="code-block"><span class="lang-tag">TypeScript — effect of strict: true</span>
+<span class="cm">// strictNullChecks: null and undefined are not assignable everywhere</span>
+<span class="kw">let</span> name: <span class="ty">string</span> = <span class="kw">null</span>; <span class="cm">// ❌ Error in strict mode</span>
+<span class="kw">let</span> name: <span class="ty">string</span> | <span class="ty">null</span> = <span class="kw">null</span>; <span class="cm">// ✅</span>
+
+<span class="cm">// noImplicitAny: must annotate function params</span>
+<span class="kw">function</span> <span class="fn">process</span>(data) { } <span class="cm">// ❌ Error: data has implicit any</span>
+<span class="kw">function</span> <span class="fn">process</span>(data: <span class="ty">unknown</span>) { } <span class="cm">// ✅</span>
+
+<span class="cm">// noUncheckedIndexedAccess: array access might be undefined</span>
+<span class="kw">const</span> browsers = [<span class="str">'chromium'</span>];
+<span class="kw">const</span> first: <span class="ty">string</span> = browsers[<span class="num">0</span>];       <span class="cm">// ❌ might be undefined</span>
+<span class="kw">const</span> first: <span class="ty">string</span> | <span class="ty">undefined</span> = browsers[<span class="num">0</span>]; <span class="cm">// ✅</span>
+        </div>
+      </div>
+      <div class="lesson-section">
+        <h3>Recommended ESLint rules for test code</h3>
+        <div class="code-block"><span class="lang-tag">JSON (.eslintrc)</span>
+{
+  <span class="str">"rules"</span>: {
+    <span class="str">"@typescript-eslint/no-floating-promises"</span>: <span class="str">"error"</span>,    <span class="cm">// catch missing await</span>
+    <span class="str">"@typescript-eslint/no-explicit-any"</span>: <span class="str">"warn"</span>,          <span class="cm">// avoid any</span>
+    <span class="str">"@typescript-eslint/prefer-nullish-coalescing"</span>: <span class="str">"warn"</span>  <span class="cm">// use ?? over ||</span>
+  }
+}
+        </div>
+      </div>
+      <div class="callout callout-tip"><span class="callout-icon">💡</span><span><code>no-floating-promises</code> is the single most impactful ESLint rule for Playwright tests — it catches forgotten <code>await</code> keywords that cause intermittent failures.</span></div>
+      ${quiz({
+        q: 'What does enabling `strict: true` in tsconfig.json do?',
+        opts: [
+          'Makes TypeScript compilation faster',
+          'Enables a set of strict type-checking rules including strictNullChecks and noImplicitAny',
+          'Prevents any JavaScript files from being included',
+          'Enables all ESLint rules'
+        ],
+        correct: 1,
+        feedback: 'strict: true is a shorthand that enables multiple strict type-checking flags at once, including strictNullChecks, noImplicitAny, strictFunctionTypes, and others. For test code, this catches many common bugs at compile time.'
+      })}
+    `
+  }
+];
+
+// State
+const completed = new Set(JSON.parse(localStorage.getItem('ts-qa-completed') || '[]'));
+let current = 0;
+
+function saveProgress() {
+  localStorage.setItem('ts-qa-completed', JSON.stringify([...completed]));
+}
+
+function quiz({ q, opts, correct, feedback }) {
+  const id = 'quiz-' + Math.random().toString(36).slice(2);
+  return `
+    <div class="quiz-card" id="${id}">
+      <div class="quiz-q">❓ ${q}</div>
+      <div class="quiz-options">
+        ${opts.map((o, i) => `<div class="quiz-opt" onclick="answerQuiz('${id}', ${i}, ${correct})" data-idx="${i}">${String.fromCharCode(65+i)}. ${o}</div>`).join('')}
+      </div>
+      <div class="quiz-feedback" id="${id}-fb"></div>
+      <div class="quiz-next" id="${id}-next">
+        <button class="btn btn-ghost" onclick="this.closest('.quiz-card').style.opacity='0.6'">Dismiss</button>
+      </div>
+    </div>`;
+}
+
+function answerQuiz(id, chosen, correct) {
+  const card = document.getElementById(id);
+  const opts = card.querySelectorAll('.quiz-opt');
+  const fb = document.getElementById(id + '-fb');
+  const nxt = document.getElementById(id + '-next');
+
+  opts.forEach(o => o.classList.add('disabled'));
+  opts[chosen].classList.add(chosen === correct ? 'correct' : 'wrong');
+  if (chosen !== correct) opts[correct].classList.add('correct');
+
+  const isCorrect = chosen === correct;
+  fb.className = 'quiz-feedback show ' + (isCorrect ? 'ok' : 'err');
+  fb.innerHTML = (isCorrect ? '✅ Correct! ' : '❌ Not quite. ') + TOPICS[current].content.__feedback || '';
+  // get feedback from data
+  const quizMatch = TOPICS[current].content.toString().match(new RegExp(`quiz\\(\\{[^}]*feedback: '([^']+)'`));
+  fb.innerHTML = (isCorrect ? '✅ Correct! ' : '❌ Not quite. ');
+
+  nxt.classList.add('show');
+}
+
+function renderSidebar() {
+  const list = document.getElementById('topic-list');
+  list.innerHTML = TOPICS.map((t, i) => `
+    <div class="topic-item ${i === current ? 'active' : ''} ${completed.has(t.id) ? 'completed' : ''}" onclick="goTo(${i})">
+      <span class="topic-icon">${completed.has(t.id) ? '✓' : t.icon}</span>
+      <span>${t.title}</span>
+      <span class="topic-badge">${t.tag}</span>
+    </div>
+  `).join('');
+
+  const pct = Math.round((completed.size / TOPICS.length) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+}
+
+function renderContent() {
+  const topic = TOPICS[current];
+  document.getElementById('topic-title').textContent = topic.title;
+  document.getElementById('topic-tag').textContent = topic.tag;
+  document.getElementById('content').innerHTML = topic.content();
+  document.getElementById('step-info').textContent = `${current + 1} / ${TOPICS.length}`;
+  document.getElementById('btn-prev').disabled = current === 0;
+  document.getElementById('btn-next').textContent = current === TOPICS.length - 1 ? '✓ Complete' : 'Next →';
+
+  // Mark as completed when viewed (generous approach)
+  completed.add(topic.id);
+  saveProgress();
+  renderSidebar();
+
+  // Scroll to top
+  document.getElementById('content').scrollTop = 0;
+
+  // Show completion banner on last topic
+  if (current === TOPICS.length - 1) {
+    const banner = document.createElement('div');
+    banner.className = 'complete-banner';
+    banner.innerHTML = `<h3>🎉 Course Complete!</h3><p>You've covered all ${TOPICS.length} TypeScript topics for QA automation.<br>Apply these patterns in your next Playwright test suite.</p>`;
+    document.getElementById('content').appendChild(banner);
+  }
+}
+
+function goTo(i) {
+  current = i;
+  renderContent();
+  renderSidebar();
+}
+
+function navigate(dir) {
+  const next = current + dir;
+  if (next >= 0 && next < TOPICS.length) goTo(next);
+}
+
+// Init
+renderSidebar();
+renderContent();
+</script>
+</body>
+</html>
